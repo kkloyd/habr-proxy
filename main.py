@@ -4,7 +4,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, urlunparse
 
 import requests
-from bs4 import BeautifulSoup, NavigableString
+from bs4 import BeautifulSoup, NavigableString, Comment
 
 # modified version of string punctuation
 punctuation = r"""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~«»"""
@@ -28,10 +28,11 @@ def modify_words(array):
 # changes strings of all descendants(all children inside tag)
 def change_in_tag(root):
     for desc in list(root.descendants):
-        if isinstance(desc, NavigableString):
-            arr = re.split(r'(\s+)', desc)  # re.split saves whitespaces as original
-            newchild = modify_words(arr)
-            desc.replace_with(newchild)
+        if desc.parent.name != 'script':
+            if isinstance(desc, NavigableString) and not isinstance(desc, Comment):
+                arr = re.split(r'(\s+)', desc)  # re.split saves whitespaces as original
+                newchild = modify_words(arr)
+                desc.replace_with(newchild)
 
 
 def modify_content_from_url(url, self):
@@ -46,8 +47,6 @@ def modify_content_from_url(url, self):
             scheme, netloc, path, params, query, fragment = urlparse(link['href'])
             new_url = urlunparse(('http', 'localhost:3000', path, params, query, fragment))
             link['href'] = new_url
-        with open("/home/zhasulan/Downloads/sometxt.txt", 'w') as f:
-            f.write(html.unescape(r.text))
 
         layout = soup.find('div', attrs={'class': 'layout'})
         if layout:
